@@ -144,6 +144,28 @@ local TREE_NAMES = {
 }
 
 -- { { name, icon }, ... } for count trees, or nil.
+-- Fallback tree icons (the original talent tab icons), left to right.
+local ICON = "Interface\\Icons\\"
+local TREE_ICONS = {
+    WARRIOR = { "ability_warrior_savageblow", "ability_warrior_innerrage", "ability_warrior_defensivestance" },
+    PALADIN = { "spell_holy_holybolt", "spell_holy_devotionaura", "spell_holy_auraoflight" },
+    HUNTER  = { "ability_hunter_beasttaming", "ability_marksmanship", "ability_hunter_swiftstrike" },
+    ROGUE   = { "ability_rogue_eviscerate", "ability_backstab", "ability_stealth" },
+    PRIEST  = { "spell_holy_wordfortitude", "spell_holy_guardianspirit", "spell_shadow_shadowwordpain" },
+    SHAMAN  = { "spell_nature_lightning", "spell_nature_lightningshield", "spell_nature_magicimmunity" },
+    MAGE    = { "spell_holy_magicalsentry", "spell_fire_firebolt02", "spell_frost_frostbolt02" },
+    WARLOCK = { "spell_shadow_deathcoil", "spell_shadow_metamorphosis", "spell_shadow_rainoffire" },
+    DRUID   = { "spell_nature_starfall", "ability_racial_bearform", "spell_nature_healingtouch" },
+}
+
+local function FillIcons(file, out)
+    local icons = TREE_ICONS[file]
+    for i, t in ipairs(out) do
+        if not t.icon and icons and icons[i] then t.icon = ICON .. icons[i] end
+    end
+    return out
+end
+
 function TC.TreeNames(file, count)
     local out = {}
     local c = TC.ClassInfo(file)
@@ -156,7 +178,7 @@ function TC.TreeNames(file, count)
             local ok, _, name, _, icon = pcall(getSpec, c.id, i)
             if ok and type(name) == "string" and name ~= "" then out[i] = { name = name, icon = icon } end
         end
-        if #out == count then return out end
+        if #out == count then return FillIcons(file, out) end
     end
     out = {}
     local names = TREE_NAMES[file]
@@ -174,7 +196,7 @@ function TC.TreeNames(file, count)
                 if type(icon) == "number" or type(icon) == "string" then out[i].icon = icon end
             end
         end
-        return out
+        return FillIcons(file, out)
     end
     return nil
 end
