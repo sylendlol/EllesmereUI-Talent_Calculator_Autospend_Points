@@ -23,12 +23,17 @@ local ORDER_COLS, ORDER_ROW_H = 3, 20
 
 local state = { class = nil, T = nil, live = nil, st = nil }
 local legacyFS   -- the Legacy Talent Points value on the page
+local legacyWash, legacyBorder
+local LEGACY_ICON = 132222   -- ability_marksmanship: the Adventure talent passive
 
 -- Progress Legacy > Adventure: points in the talent passive (0..5), from the
 -- level your first talent point comes at (10 - points).
 local LEGACY_MAX = 5
 local function UpdateLegacy()
     if not legacyFS then return end
+    local ar, ag, ab = TC.Accent()
+    if legacyWash then legacyWash:SetColorTexture(ar, ag, ab, 0.08) end
+    if legacyBorder then legacyBorder:SetColor(ar, ag, ab, 0.7) end
     local first = TC.FirstLevel()
     local pts = math.max(0, math.min(LEGACY_MAX, 10 - first))
     local hex = TC.AccentHex()
@@ -801,10 +806,61 @@ local function BuildPage(pageName, parent, yOffset)
               .. "talent point one level earlier (5 points: level 5 instead of 10). You never get more than "
               .. TC.MAX_TALENT_POINTS .. " talent points." }
     );  y = y - h
-    if not prebuild and legacyRow and legacyRow._leftRegion then
+    if not prebuild and legacyRow then
         legacyFS = EllesmereUI.MakeFont(legacyRow, 13, nil, 1, 1, 1, 1)
         legacyFS:SetPoint("RIGHT", legacyRow, "RIGHT", -20, 0)
         legacyFS:SetJustifyH("RIGHT")
+        -- Highlight: accent frame and a faint accent wash, so the row stands out.
+        local ar, ag, ab = TC.Accent()
+        legacyWash = legacyRow:CreateTexture(nil, "BACKGROUND", nil, 2)
+        legacyWash:SetAllPoints()
+        legacyWash:SetColorTexture(ar, ag, ab, 0.08)
+        legacyBorder = EllesmereUI.MakeBorder(legacyRow, ar, ag, ab, 0.7, EllesmereUI.PanelPP)
+        -- The Legacy talent passive's icon after the label.
+        local holder = CreateFrame("Frame", nil, legacyRow)
+        holder:SetSize(22, 22)
+        holder:SetFrameLevel(legacyRow:GetFrameLevel() + 3)
+        local region = legacyRow._leftRegion
+        local label = type(region) == "table" and region._label or nil
+        if type(label) == "table" and label.GetObjectType then
+            holder:SetPoint("LEFT", label, "RIGHT", 8, 0)
+        else
+            holder:SetPoint("LEFT", legacyRow, "LEFT", 190, 0)
+        end
+        local icon = holder:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints()
+        icon:SetTexture(LEGACY_ICON)
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        EllesmereUI.MakeBorder(holder, 0, 0, 0, 1, EllesmereUI.PanelPP)
+        -- Hover: the passive itself (its text shows its current rank), then
+        -- what the calculator reads from it.
+        holder:EnableMouse(true)
+        holder:SetScript("OnEnter", function(self)
+            local ar, ag, ab = TC.Accent()
+            local first = TC.FirstLevel()
+            local pts = math.max(0, math.min(LEGACY_MAX, 10 - first))
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            if not pcall(GameTooltip.SetSpellByID, GameTooltip, TC.LEGACY_TALENT_SPELL) then
+                GameTooltip:SetText("Progress Legacy: Adventure", 1, 1, 1)
+            end
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("Progress Legacy > Adventure", 0.6, 0.6, 0.6)
+            GameTooltip:AddDoubleLine("Points in this talent", pts .. " / " .. LEGACY_MAX, 1, 1, 1, ar, ag, ab)
+            GameTooltip:AddDoubleLine("First talent point at level", tostring(first), 1, 1, 1, ar, ag, ab)
+            GameTooltip:AddDoubleLine("Talent points at most", tostring(TC.MaxPoints()), 1, 1, 1, ar, ag, ab)
+            if pts < LEGACY_MAX then
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("Each more point in this talent gives your first talent point one level earlier.",
+                    0.6, 0.6, 0.6, true)
+            end
+            if TC.LegacyFirstLevel() == nil and pts > 0 then
+                GameTooltip:AddLine("Read from your talent points (the passive's text was not available).", 0.6, 0.6, 0.6, true)
+            end
+            GameTooltip:Show()
+        end)
+        holder:SetScript("OnLeave", function(self)
+            if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+        end)
         UpdateLegacy()
     end
 
