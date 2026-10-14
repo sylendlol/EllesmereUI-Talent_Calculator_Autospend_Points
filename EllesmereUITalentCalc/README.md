@@ -13,7 +13,7 @@ Version **9.4** · Author: **Dworak**
 | What | Why |
 |---|---|
 | **WoW Forever** client (Interface `16001`) | The calculator is made for Forever's talent trees: the three classic trees per class, the classic tier rule, the 51-point cap and the Progress Legacy talent passive. |
-| **EllesmereUI** 9.4 or newer (the `EllesmereUI` and `EllesmereUIOptions` folders) | The calculator is a page inside the EllesmereUI options panel and uses its widgets, fonts and colors. It needs an EllesmereUI version with the Plugin API (`EllesmereUI\PLUGINS_API.md`). Get EllesmereUI from its own download source. |
+| **EllesmereUI** 9.4 or newer, tested with 9.5.4 (the `EllesmereUI` and `EllesmereUIOptions` folders) | The calculator is a page inside the EllesmereUI options panel and uses its widgets, fonts and colors. It needs an EllesmereUI version with the Plugin API (`EllesmereUI\PLUGINS_API.md`). Get EllesmereUI from its own download source. |
 | **EllesmereUIDworak** | Creates the **Dworak** section in the EllesmereUI sidebar that the calculator lives in. Without it the calculator does not load. |
 
 Nothing else is needed. The other Dworak modules (Bag Slots, Talents reminder) are optional.

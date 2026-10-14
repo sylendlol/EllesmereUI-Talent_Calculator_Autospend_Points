@@ -486,14 +486,19 @@ local function MinGap(sorted)
     return best
 end
 
+-- Sorted distinct coordinates. Values closer than 4% of the whole range are
+-- one row/column: the client places some talents a few units off (Warlock
+-- Affliction: y 2120 next to 2130), which must not count as a new row.
 local function Distinct(values)
     table.sort(values)
     local u = {}
+    local tol = math.max(0.01, ((values[#values] or 0) - (values[1] or 0)) * 0.04)
     for _, v in ipairs(values) do
-        if #u == 0 or v - u[#u] > 0.01 then u[#u + 1] = v end
+        if #u == 0 or v - u[#u] > tol then u[#u + 1] = v end
     end
     return u
 end
+TC.Distinct = Distinct
 
 -- Removes the nodes in drop (set of nodeIDs) from T.
 function TC.DropNodes(T, drop)
@@ -949,6 +954,8 @@ end
 -------------------------------------------------------------------------------
 local events = CreateFrame("Frame")
 local waitingCombat = false
+local lastCommit = 0        -- GetTime() of our last commit
+local stagedWarned = false  -- the "unapplied changes" note was shown for this batch
 local onLearned -- the page repaints through this
 
 function TC.SetOnLearned(fn) onLearned = fn end
@@ -990,9 +997,17 @@ function TC.LearnPlanned(manual)
         return
     end
     if C_Traits.ConfigHasStagedChanges and Call(C_Traits.ConfigHasStagedChanges, configID) then
-        TC.Print("the talent window has changes that are not applied yet. Apply or undo them, then press Learn Now.")
+        -- Right after our own commit the game may still be applying it: wait
+        -- quietly. Otherwise the player has unapplied picks in the talent
+        -- window: say so once (always when asked by hand), never touch them.
+        if not manual and GetTime() - lastCommit < 6 then return end
+        if manual or not stagedWarned then
+            stagedWarned = true
+            TC.Print("the talent window has changes that are not applied yet. Apply or undo them, then press Learn Now.")
+        end
         return
     end
+    stagedWarned = false
 
     local st = TC.Evaluate(T, plan.steps)
     local need, learned, blocked = {}, {}, nil
@@ -1025,6 +1040,7 @@ function TC.LearnPlanned(manual)
 
     if #learned > 0 then
         if Commit(configID) then
+            lastCommit = GetTime()
             TC.Print("learned " .. table.concat(learned, ", ") .. ".")
         else
             TC.Print("the talents are picked but could not be applied. Open the talent window and press Apply Changes.")
@@ -1048,7 +1064,19 @@ events:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
         self:UnregisterEvent("PLAYER_LOGIN")
         TC.DB(); TC.CDB()
-        C_Timer.After(3, function() TC.ScanLive(); AutoLearn() end)
+        -- The talent tree is not always readable right after login: try a
+        -- few times, then read it and learn what the build has waiting.
+        local tries = 0
+        local function Boot()
+            tries = tries + 1
+            if TC.LiveConfig() or tries >= 6 then
+                TC.ScanLive()
+                AutoLearn()
+            else
+                C_Timer.After(3, Boot)
+            end
+        end
+        C_Timer.After(3, Boot)
     elseif event == "PLAYER_LEVEL_UP" then
         -- The new point arrives a moment after the event.
         C_Timer.After(1, AutoLearn)

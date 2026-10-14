@@ -246,11 +246,8 @@ end
 -- far-away node does not squash the rest of the tree: a gap counts as at
 -- most 2 slots, a small offset as at least a third of one.
 local function Axis(values)
-    local u = {}
-    table.sort(values)
-    for _, v in ipairs(values) do
-        if #u == 0 or v - u[#u] > 0.01 then u[#u + 1] = v end
-    end
+    -- Coordinates a few units apart are one row/column (see TC.Distinct).
+    local u = TC.Distinct(values)
     local map = { [u[1]] = 0 }
     if #u == 1 then return map, 0 end
     local gaps = {}
