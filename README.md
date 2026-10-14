@@ -1,3 +1,7 @@
+<img width="1285" height="927" alt="{5F8E2C6A-932A-4C39-A6B4-1941EC142B73}" src="https://github.com/user-attachments/assets/dcd64568-b7bf-4173-8f53-36ef1790d058" />
+<img width="1282" height="929" alt="{7B303B19-713C-4207-970D-66AFC4919CDC}" src="https://github.com/user-attachments/assets/bae08903-eda1-4f71-8c72-ecc9c2517a97" />
+
+
 # EllesmereUI Talent Calculator
 
 A talent calculator for **WoW Forever**, built as a module of **EllesmereUI**.
